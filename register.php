@@ -1,189 +1,87 @@
+<?php include_once "./include/header.php"; ?>
+
 <?php
-session_start();
-include "db.php";
-if (isset($_POST["f_name"])) {
-
-	$f_name = $_POST["f_name"];
-	$l_name = $_POST["l_name"];
-	$email = $_POST['email'];
-	$password = $_POST['password'];
-	$repassword = $_POST['repassword'];
-	$mobile = $_POST['mobile'];
-	$address1 = $_POST['address1'];
-	$address2 = $_POST['address2'];
-	$name = "/^[a-zA-Z ]+$/";
-	$emailValidation = "/^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9]+(\.[a-z]{2,4})$/";
-	$number = "/^[0-9]+$/";
-
-if(empty($f_name) || empty($l_name) || empty($email) || empty($password) || empty($repassword) ||
-	empty($mobile) || empty($address1) || empty($address2)){
-		
-		echo "
-			<div class='alert alert-warning'>
-				<a href='#' class='close' data-dismiss='alert' aria-label='close'>&times;</a><b>PLease Fill all fields..!</b>
-			</div>
-		";
-		exit();
-	} else {
-		if(!preg_match($name,$f_name)){
-		echo "
-			<div class='alert alert-warning'>
-				<a href='#' class='close' data-dismiss='alert' aria-label='close'>&times;</a>
-				<b>this $f_name is not valid..!</b>
-			</div>
-		";
-		exit();
-	}
-	if(!preg_match($name,$l_name)){
-		echo "
-			<div class='alert alert-warning'>
-				<a href='#' class='close' data-dismiss='alert' aria-label='close'>&times;</a>
-				<b>this $l_name is not valid..!</b>
-			</div>
-		";
-		exit();
-	}
-	if(!preg_match($emailValidation,$email)){
-		echo "
-			<div class='alert alert-warning'>
-				<a href='#' class='close' data-dismiss='alert' aria-label='close'>&times;</a>
-				<b>this $email is not valid..!</b>
-			</div>
-		";
-		exit();
-	}
-	if(strlen($password) < 9 ){
-		echo "
-			<div class='alert alert-warning'>
-				<a href='#' class='close' data-dismiss='alert' aria-label='close'>&times;</a>
-				<b>Password is weak</b>
-			</div>
-		";
-		exit();
-	}
-	if(strlen($repassword) < 9 ){
-		echo "
-			<div class='alert alert-warning'>
-				<a href='#' class='close' data-dismiss='alert' aria-label='close'>&times;</a>
-				<b>Password is weak</b>
-			</div>
-		";
-		exit();
-	}
-	if($password != $repassword){
-		echo "
-			<div class='alert alert-warning'>
-				<a href='#' class='close' data-dismiss='alert' aria-label='close'>&times;</a>
-				<b>password is not same</b>
-			</div>
-		";
-	}
-	if(!preg_match($number,$mobile)){
-		echo "
-			<div class='alert alert-warning'>
-				<a href='#' class='close' data-dismiss='alert' aria-label='close'>&times;</a>
-				<b>Mobile number $mobile is not valid</b>
-			</div>
-		";
-		exit();
-	}
-	if(!(strlen($mobile) == 10)){
-		echo "
-			<div class='alert alert-warning'>
-				<a href='#' class='close' data-dismiss='alert' aria-label='close'>&times;</a>
-				<b>Mobile number must be 10 digit</b>
-			</div>
-		";
-		exit();
-	}
-	//existing email address in our database
-	$sql = "SELECT user_id FROM user_info WHERE email = '$email' LIMIT 1" ;
-	$check_query = mysqli_query($con,$sql);
-	$count_email = mysqli_num_rows($check_query);
-	if($count_email > 0){
-		echo "
-			<div class='alert alert-danger'>
-				<a href='#' class='close' data-dismiss='alert' aria-label='close'>&times;</a>
-				<b>Email Address is already available Try Another email address</b>
-			</div>
-		";
-		exit();
-	} else {
-		
-		$sql = "INSERT INTO `user_info` 
-		(`user_id`, `first_name`, `last_name`, `email`, 
-		`password`, `mobile`, `address1`, `address2`) 
-		VALUES (NULL, '$f_name', '$l_name', '$email', 
-		'$password', '$mobile', '$address1', '$address2')";
-		$run_query = mysqli_query($con,$sql);
-		$_SESSION["uid"] = mysqli_insert_id($con);
-		$_SESSION["name"] = $f_name;
-		$ip_add = getenv("REMOTE_ADDR");
-		$sql = "UPDATE cart SET user_id = '$_SESSION[uid]' WHERE ip_add='$ip_add' AND user_id = -1";
-		if(mysqli_query($con,$sql)){
-			echo "register_success";
-			echo "<script> location.href='store.php'; </script>";
-            exit;
-		}
-	}
-	}
-	
-}
-
-
-
+$cities = ["Ahmednagar", "Akola", "Akot", "Amalner", "Ambejogai", "Amravati", "Anjangaon", "Arvi", "Aurangabad", "Bhiwandi", "Dhule", "Kalyan-Dombivali", "Ichalkaranji", "Kalyan-Dombivali", "Karjat", "Latur", "Loha", "Lonar", "Lonavla", "Mahad", "Malegaon", "Malkapur", "Mangalvedhe", "Mangrulpir", "Manjlegaon", "Manmad", "Manwath", "Mehkar", "Mhaswad", "Mira-Bhayandar", "Morshi", "Mukhed", "Mul", "Greater Mumbai*", "Murtijapur", "Nagpur", "Nanded-Waghala", "Nandgaon", "Nandura", "Nandurbar", "Narkhed", "Nashik", "Navi Mumbai", "Nawapur", "Nilanga", "Osmanabad", "Ozar", "Pachora", "Paithan", "Palghar", "Pandharkaoda", "Pandharpur", "Panvel", "Parbhani", "Parli", "Partur", "Pathardi", "Pathri", "Patur", "Pauni", "Pen", "Phaltan", "Pulgaon", "Pune", "Purna", "Pusad", "Rahuri", "Rajura", "Ramtek", "Ratnagiri", "Raver", "Risod", "Sailu", "Sangamner", "Sangli", "Sangole", "Sasvad", "Satana", "Satara", "Savner", "Sawantwadi", "Shahade", "Shegaon", "Shendurjana", "Shirdi", "Shirpur-Warwade", "Shirur", "Shrigonda", "Shrirampur", "Sillod", "Sinnar", "Solapur", "Soyagaon", "Talegaon Dabhade", "Talode", "Tasgaon", "Thane", "Tirora", "Tuljapur", "Tumsar", "Uchgaon", "Udgir", "Umarga", "Umarkhed", "Umred", "Uran", "Uran Islampur", "Vadgaon Kasba", "Vaijapur", "Vasai-Virar", "Vita", "Wadgaon Road", "Wai", "Wani", "Wardha", "Warora", "Warud", "Washim", "Yavatmal", "Yawal", "Yevla"];
 ?>
+<?php include_once "msg/register.php"; ?>
+<div class="container" style="margin-top: 30px; max-width: 800px;margin-bottom: 60px;">
+    <div class="card">
+        <div class="card-body">
+            <div class="card-title">
+                <h3 class="text-center">Register as Service Provider</h3>
+            </div>
+            <hr>
 
 
+            <form action="scripts/register.php" method="post" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="">Name</label>
+                    <input id="name" name="name" type="text" class="form-control" placeholder="Name" required>
+                </div>
 
+                <div class="form-group">
+                    <label for="">Contact No.</label>
+                    <input id="contact"
+                        oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');"
+                        name="contact" type="text" class="form-control" placeholder="Contact" minlength="10"
+                        maxlength="10" required>
+                </div>
 
+                <div class="form-group">
+                    <label for="">Address Line 1</label>
+                    <input id="adder1" name="adder1" type="text" class="form-control" placeholder="Enter Address line-1"
+                        required>
+                </div>
 
+                <div class="form-group">
+                    <label for="">Address Line 2</label>
+                    <input id="adder2" name="adder2" type="text" class="form-control" placeholder="Enter Address line-2"
+                        required>
+                </div>
 
+                <div class="form-group">
+                    <label for="">City</label>
+                    <select class="form-control" name="city" id="city">
+                        <?php foreach ($cities as $city) : ?>
+                        <option value="<?= $city ?>"> <?= $city ?>
+                        </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
 
+                <div class="form-group">
+                    <label for="">Photo(Square Size)</label>
+                    <input id="photo" name="photo" type="file" class="form-control-file" placeholder="Select Photo 1"
+                        required>
+                </div>
 
+                <div class="form-group">
+                    <label for="">Add Description</label>
+                    <textarea name="descr" id="descr" class="form-control" cols="30" rows="5"
+                        placeholder="Tell something about you..." required></textarea>
+                </div>
 
+                <div class="form-group">
+                    <label for="">Password</label>
+                    <input id="password" name="password" type="password" class="form-control"
+                        placeholder="Enter 6 Character Password" minlength="4" required>
+                </div>
 
+                <div class="form-group">
+                    <label for="">Profession</label>
+                    <select class="form-control" name="profession" id="profession">
+                        <option value="electrician">Electrician</option>
+                        <option value="plumber">Plumber</option>
+                        <option value="mobile">Mobile Repairer</option>
+                    </select>
+                </div>
 
+                <button style="margin-top: 30px;" class="btn btn-block btn-primary" type="submit" name="register"
+                    id="register">Register</button>
+            </form>
 
+        </div>
+    </div>
+</div>
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+<?php include_once "./include/footer.php";
